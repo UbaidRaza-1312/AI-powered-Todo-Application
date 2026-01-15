@@ -1,54 +1,100 @@
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.orm import sessionmaker
 from typing import AsyncGenerator
 import os
-from contextlib import asynccontextmanager
+import logging
 
-# Get database URL from environment or use default
-# Using absolute path to ensure database persists across app restarts
-db_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "todo_app.db"))
-DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite+aiosqlite:///{db_path}")
+# Global variables - will be initialized when needed
+_engine = None
+_AsyncSessionLocal = None
 
-# Create async engine
-# For SQLite, we need to handle the URL differently
-if DATABASE_URL.startswith("postgresql"):
-    engine = create_async_engine(DATABASE_URL)
-else:
-    # For SQLite, we need to ensure proper format and add query parameters for async operations
-    if "sqlite+aiosqlite://" in DATABASE_URL:
-        # Ensure proper SQLite URL format for aiosqlite
-        # Adding query parameters for better durability with SQLite
-        engine = create_async_engine(
-            DATABASE_URL,
-            echo=True,
-            connect_args={
-                "check_same_thread": False,  # Required for async operations
-                "timeout": 20  # Increase timeout to ensure writes complete
-            },
-            pool_pre_ping=True  # Verify connections before use
+def get_engine():
+    """Get the database engine, initializing it if necessary"""
+    global _engine
+    if _engine is None:
+        # Get database URL from environment - defaults to local SQLite for development
+        DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://neondb_owner:npg_ZGuc2zkhn5Mv@ep-ancient-rice-ahzcklrv-pooler.c-3.us-east-1.aws.neon.tech/neondb")
+        
+        # Determine database type and configure accordingly
+        if "postgresql" in DATABASE_URL.lower():
+            # PostgreSQL/Neon DB configuration
+            try:
+                from sqlalchemy.orm import sessionmaker
+                _engine = create_async_engine(
+                    DATABASE_URL,
+                    echo=True,  # Set to False in production
+                    pool_size=5,
+                    max_overflow=10,
+                    pool_pre_ping=True,  # Verify connections before use
+                    pool_recycle=300,    # Recycle connections every 5 minutes
+                    connect_args={
+                        "server_settings": {
+                            "application_name": "todo-app",
+                        },
+                    }
+                )
+                logging.info("Successfully connected to PostgreSQL/Neon DB")
+            except Exception as e:
+                logging.error(f"Failed to connect to PostgreSQL/Neon DB: {e}")
+                raise
+        elif "sqlite" in DATABASE_URL.lower():
+            # SQLite configuration for local development
+            try:
+                from sqlalchemy.orm import sessionmaker
+                _engine = create_async_engine(
+                    DATABASE_URL,
+                    echo=True,
+                    connect_args={"check_same_thread": False}
+                )
+                logging.info("Successfully connected to SQLite DB")
+            except Exception as e:
+                logging.error(f"Failed to connect to SQLite DB: {e}")
+                raise
+        else:
+            raise ValueError(f"Unsupported database type in DATABASE_URL: {DATABASE_URL}")
+    
+    return _engine
+
+def get_session_maker():
+    """Get the session maker, initializing it if necessary"""
+    global _AsyncSessionLocal
+    if _AsyncSessionLocal is None:
+        from sqlalchemy.orm import sessionmaker
+        from sqlalchemy.ext.asyncio import AsyncSession
+        
+        engine = get_engine()
+        _AsyncSessionLocal = sessionmaker(
+            autocommit=False,
+            autoflush=False,
+            bind=engine,
+            class_=AsyncSession
         )
-    else:
-        engine = create_async_engine(DATABASE_URL, echo=True)
-
-# Create async session maker
-AsyncSessionLocal = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    bind=engine,
-    class_=AsyncSession
-)
+    return _AsyncSessionLocal
 
 async def create_db_and_tables():
     """Create database tables"""
-    from ..models.user import User  # noqa: F401
-    from ..models.task import Task  # noqa: F401
-    
-    async with engine.begin() as conn:
-        # Create tables
-        await conn.run_sync(SQLModel.metadata.create_all)
+    try:
+        from ..models.user import User  # noqa: F401
+        from ..models.task import Task  # noqa: F401
+
+        engine = get_engine()
+        async with engine.begin() as conn:
+            # Create tables
+            await conn.run_sync(SQLModel.metadata.create_all)
+        logging.info("Database tables created successfully")
+    except Exception as e:
+        logging.error(f"Error creating database tables: {e}")
+        raise
 
 async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     """Get async database session"""
-    async with AsyncSessionLocal() as session:
-        yield session
+    session_maker = get_session_maker()
+    async with session_maker() as session:
+        try:
+            yield session
+        except Exception as e:
+            await session.rollback()
+            logging.error(f"Database session error: {e}")
+            raise
+        finally:
+            await session.close()

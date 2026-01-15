@@ -42,7 +42,7 @@ The application will be available at `http://localhost:3000`
 - FastAPI
 - SQLAlchemy
 - Alembic (for migrations)
-- SQLite (database)
+- Neon DB (PostgreSQL-based serverless database)
 
 ### Frontend
 - Next.js
@@ -64,8 +64,11 @@ The application will be available at `http://localhost:3000`
    - Windows: `venv\Scripts\activate`
    - macOS/Linux: `source venv/bin/activate`
 4. Install dependencies: `pip install -r requirements.txt`
-5. Set up environment variables (copy `.env.example` to `.env` and fill in values)
-6. Run the application: `python main.py`
+5. Set up environment variables:
+   - Copy `.env.example` to `.env`: `cp .env.example .env`
+   - Update the `DATABASE_URL` in `.env` with your Neon DB connection string
+6. Create the database tables: `python create_tables.py`
+7. Run the application: `python main.py`
 
 ### Frontend Setup
 1. Navigate to the frontend directory: `cd frontend`
@@ -87,7 +90,16 @@ The application will be available at `http://localhost:3000`
 
 ## Environment Variables
 
-``
+### Backend (in backend/.env)
+```env
+# Database Configuration - Neon DB
+DATABASE_URL=postgresql+asyncpg://your_username:your_password@ep-xxx.us-east-1.aws.neon.tech/your_database_name?sslmode=require
+
+# JWT Configuration
+JWT_SECRET_KEY=your-super-secret-jwt-key-change-this-to-a-random-string-in-production
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+```
 
 ## Contributing
 

@@ -1,9 +1,18 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.task_routes import router as task_router
 from src.api.auth_routes import router as auth_router
 from src.db.database import create_db_and_tables
 import uvicorn
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Debug: Print current DATABASE_URL
+print(f"DEBUG: DATABASE_URL is set to: {os.getenv('DATABASE_URL', 'DEFAULT (will use sqlite+aiosqlite:///./todo_app_local.db)')}")
 
 app = FastAPI(title="Todo App API", version="1.0.0")
 
@@ -23,7 +32,13 @@ app.include_router(auth_router, prefix="/api", tags=["auth"])
 
 @app.on_event("startup")
 async def startup_event():
-    await create_db_and_tables()
+    try:
+        logger.info("Initializing database connection...")
+        await create_db_and_tables()
+        logger.info("Database tables created successfully")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {e}")
+        raise
 
 @app.get("/")
 def read_root():
