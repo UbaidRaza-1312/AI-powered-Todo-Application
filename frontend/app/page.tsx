@@ -103,6 +103,16 @@ export default function Home() {
 }
 
 /* COMPONENTS */
+interface FeatureProps {
+  title: string;
+  desc: string;
+}
+
+interface StatProps {
+  label: string;
+  value: string;
+  color: string;
+}
 
 function FeatureCard({ title, desc }) {
   return (
