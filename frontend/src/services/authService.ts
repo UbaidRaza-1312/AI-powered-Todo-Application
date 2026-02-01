@@ -1,7 +1,7 @@
 // frontend/src/services/authService.ts
 
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+  process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ubaidraza1565-ai-todo.hf.space';
 
 interface User {
   id: string;
@@ -139,7 +139,25 @@ class AuthService {
 
   // ================== LOGOUT ==================
   async logout(): Promise<void> {
-    this.removeToken();
+    try {
+      // Call the backend logout endpoint
+      const token = this.getToken();
+      if (token) {
+        await fetch(`${API_BASE_URL}/api/auth/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Logout endpoint error:', error);
+      // Continue with local token removal even if backend call fails
+    } finally {
+      // Remove token from both localStorage and cookies
+      this.removeToken();
+    }
   }
 
   // ================== CURRENT USER ==================

@@ -5,23 +5,36 @@ import TaskService, { Task } from '../../services/taskService';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
 import { toast } from 'react-toastify';
+import FloatingChatButton from '../FloatingChatButton';
 
-interface TaskListProps {
-  userId: string;
+interface UserProfileWithStats {
+  id: string;
+  email: string;
+  first_name?: string;
+  last_name?: string;
+  created_at: string;
+  total_tasks: number;
+  completed_tasks: number;
+  pending_tasks: number;
 }
 
-const TaskList: React.FC<TaskListProps> = ({ userId }) => {
+interface TaskListProps {
+  userData: UserProfileWithStats;
+}
+
+const TaskList: React.FC<TaskListProps> = (props) => {
+  const { userData } = props;
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchTasks();
-  }, [userId]);
+  }, []);
 
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const tasksData = await TaskService.getTasks(userId);
+      const tasksData = await TaskService.getTasks();
       setTasks(tasksData);
     } catch (err) {
       toast.error('Failed to load tasks. Please try again.', {
@@ -59,7 +72,7 @@ const TaskList: React.FC<TaskListProps> = ({ userId }) => {
 
   const handleToggleCompletion = async (taskId: string) => {
     try {
-      const updatedTask = await TaskService.toggleTaskCompletion(userId, taskId);
+      const updatedTask = await TaskService.toggleTaskCompletion(taskId);
       setTasks(tasks.map(task => task.id === taskId ? updatedTask : task));
       toast.info(`"${updatedTask.title}" ${updatedTask.completed ? 'completed' : 'marked as pending'}!`, {
         position: "top-center",
@@ -96,11 +109,6 @@ const TaskList: React.FC<TaskListProps> = ({ userId }) => {
     }
   };
 
-  // Calculate summary statistics
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(task => task.completed).length;
-  const pendingTasks = totalTasks - completedTasks;
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-purple-900 to-violet-900">
@@ -115,7 +123,7 @@ const TaskList: React.FC<TaskListProps> = ({ userId }) => {
       <div className="max-w-7xl mx-auto">
         {/* Welcome Header */}
         <header className="mb-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">Welcome to Your Task Dashboard</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-blue-400 mb-2">Welcome, {userData.first_name || userData.email.split('@')[0]}!</h1>
           <p className="text-xl text-indigo-300">Manage your tasks efficiently and boost your productivity</p>
         </header>
 
@@ -123,17 +131,17 @@ const TaskList: React.FC<TaskListProps> = ({ userId }) => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 shadow-lg">
             <h3 className="text-gray-400 text-sm uppercase tracking-wider">Total Tasks</h3>
-            <p className="text-3xl font-bold text-white mt-2">{totalTasks}</p>
+            <p className="text-3xl font-bold text-white mt-2">{userData.total_tasks}</p>
           </div>
 
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 shadow-lg">
             <h3 className="text-gray-400 text-sm uppercase tracking-wider">Completed</h3>
-            <p className="text-3xl font-bold text-green-400 mt-2">{completedTasks}</p>
+            <p className="text-3xl font-bold text-green-400 mt-2">{userData.completed_tasks}</p>
           </div>
 
           <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700/50 rounded-xl p-6 shadow-lg">
             <h3 className="text-gray-400 text-sm uppercase tracking-wider">Pending</h3>
-            <p className="text-3xl font-bold text-blue-400 mt-2">{pendingTasks}</p>
+            <p className="text-3xl font-bold text-blue-400 mt-2">{userData.pending_tasks}</p>
           </div>
         </div>
 
@@ -159,7 +167,6 @@ const TaskList: React.FC<TaskListProps> = ({ userId }) => {
                   <TaskItem
                     key={task.id}
                     task={task}
-                    userId={userId}
                     onTaskUpdated={handleTaskUpdated}
                     onTaskDeleted={handleTaskDeleted}
                     onToggleCompletion={handleToggleCompletion}
@@ -172,9 +179,12 @@ const TaskList: React.FC<TaskListProps> = ({ userId }) => {
           {/* Right: Create New Task Form - taking 4 out of 12 columns (1/3 of the space) */}
           <div className="bg-gray-800/30 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6 shadow-xl lg:col-span-4">
             <h2 className="text-2xl font-bold text-white mb-6">Create New Task</h2>
-            <TaskForm userId={userId} onTaskCreated={handleTaskCreated} />
+            <TaskForm onTaskCreated={handleTaskCreated} />
           </div>
         </div>
+
+        {/* Floating Chat Button */}
+        <FloatingChatButton />
       </div>
     </div>
   );

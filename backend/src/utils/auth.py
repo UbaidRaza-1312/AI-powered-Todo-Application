@@ -6,14 +6,14 @@ import os
 import bcrypt
 
 # Secret key for JWT tokens - should come from environment
-SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key-change-in-production")
+SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-super-secret-key-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     Verify a plaintext password against a hashed password.
-    Truncate password to 72 bytes to match bcrypt limit.
+    Truncate to 72 bytes to match bcrypt limit.
     """
     # Ensure password doesn't exceed bcrypt's 72-byte limit
     # First encode to bytes to check actual length
@@ -28,8 +28,12 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         # If it's within the limit, use the original password
         safe_password = plain_password
 
-    # Use bcrypt directly to verify - hashed_password is stored as string but needs to be bytes for bcrypt
-    return bcrypt.checkpw(safe_password.encode('utf-8'), hashed_password.encode('ascii'))
+    # Use bcrypt to verify - hashed_password should be handled properly for SQLite
+    try:
+        return bcrypt.checkpw(safe_password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception:
+        # Fallback for different encoding issues
+        return bcrypt.checkpw(safe_password.encode('utf-8'), hashed_password.encode('ascii'))
 
 def get_password_hash(password: str) -> str:
     """
@@ -49,7 +53,7 @@ def get_password_hash(password: str) -> str:
         # If it's within the limit, use the original password
         safe_password = password
 
-    # Use bcrypt directly to hash
+    # Use bcrypt to hash
     salt = bcrypt.gensalt(rounds=12)  # Increased rounds for better security
     hashed_bytes = bcrypt.hashpw(safe_password.encode('utf-8'), salt)
     # Convert bytes to string for storage

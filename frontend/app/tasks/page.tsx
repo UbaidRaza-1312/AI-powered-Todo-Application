@@ -3,35 +3,31 @@
 
 import React, { useState, useEffect } from 'react';
 import TaskList from '../../src/components/TaskManager/TaskList';
-import AuthService from '../../src/services/authService';
+import UserService from '../../src/services/userService';
 
 const TasksPage = () => {
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = AuthService.getToken();
-    if (!token) {
-      // Remove any stale cookies if token isn't in localStorage
-      document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-      window.location.href = '/auth/login';
-      return;
-    }
-
-    // Fetch user data from API
-    AuthService.getCurrentUser()
-      .then(user => {
-        setUserId(user.id);
-      })
-      .catch(() => {
+    const fetchUserData = async () => {
+      try {
+        const userProfile = await UserService.getUserProfileWithStats();
+        setUserData(userProfile);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
         // Remove invalid token from both localStorage and cookies
-        localStorage.removeItem('access_token');
-        document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('access_token');
+          document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        }
         window.location.href = '/auth/login';
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   if (loading) {
@@ -42,11 +38,11 @@ const TasksPage = () => {
     );
   }
 
-  if (!userId) {
+  if (!userData) {
     return null; // Redirect is happening in useEffect
   }
 
-  return <TaskList userId={userId} />;
+  return <TaskList userData={userData} />;
 };
 
 export default TasksPage;

@@ -1,6 +1,6 @@
 // frontend/src/services/taskService.ts
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://ubaidraza1565-ai-todo.hf.space';
 
 interface Task {
   id: string;
@@ -10,13 +10,13 @@ interface Task {
   user_id: string;
   created_at: string;
   updated_at: string;
+  due_date?: string;
 }
 
 interface TaskCreateData {
   title: string;
   description?: string;
   completed?: boolean;
-  priority?: number;
   due_date?: string;
 }
 
@@ -24,7 +24,6 @@ interface TaskUpdateData {
   title?: string;
   description?: string;
   completed?: boolean;
-  priority?: number;
   due_date?: string;
 }
 
@@ -49,8 +48,8 @@ class TaskService {
     return headers;
   }
 
-  async getTasks(userId: string, completed?: boolean): Promise<Task[]> {
-    let url = `${API_BASE_URL}/api/users/${userId}/tasks`;
+  async getTasks(completed?: boolean): Promise<Task[]> {
+    let url = `${API_BASE_URL}/api/tasks`;
     if (completed !== undefined) {
       url += `?completed=${completed}`;
     }
@@ -67,8 +66,8 @@ class TaskService {
     return response.json();
   }
 
-  async createTask(userId: string, taskData: TaskCreateData): Promise<Task> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/tasks`, {
+  async createTask(taskData: TaskCreateData): Promise<Task> {
+    const response = await fetch(`${API_BASE_URL}/api/tasks`, {
       method: 'POST',
       headers: this.getHeaders(),
       body: JSON.stringify(taskData),
@@ -81,8 +80,8 @@ class TaskService {
     return response.json();
   }
 
-  async getTaskById(userId: string, taskId: string): Promise<Task> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/tasks/${taskId}`, {
+  async getTaskById(taskId: string): Promise<Task> {
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
       method: 'GET',
       headers: this.getHeaders(),
     });
@@ -94,8 +93,8 @@ class TaskService {
     return response.json();
   }
 
-  async updateTask(userId: string, taskId: string, taskData: TaskUpdateData): Promise<Task> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/tasks/${taskId}`, {
+  async updateTask(taskId: string, taskData: TaskUpdateData): Promise<Task> {
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
       method: 'PUT',
       headers: this.getHeaders(),
       body: JSON.stringify(taskData),
@@ -108,8 +107,8 @@ class TaskService {
     return response.json();
   }
 
-  async deleteTask(userId: string, taskId: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/tasks/${taskId}`, {
+  async deleteTask(taskId: string): Promise<void> {
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}`, {
       method: 'DELETE',
       headers: this.getHeaders(),
     });
@@ -119,8 +118,8 @@ class TaskService {
     }
   }
 
-  async toggleTaskCompletion(userId: string, taskId: string): Promise<Task> {
-    const response = await fetch(`${API_BASE_URL}/api/users/${userId}/tasks/${taskId}/complete`, {
+  async toggleTaskCompletion(taskId: string): Promise<Task> {
+    const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/complete`, {
       method: 'PATCH',
       headers: this.getHeaders(),
     });

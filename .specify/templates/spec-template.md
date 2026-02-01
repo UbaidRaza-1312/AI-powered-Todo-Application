@@ -119,5 +119,17 @@
 
 - **AC-001**: All technical claims must be verifiable through primary sources
 - **AC-002**: All sources cited in APA style (7th edition)
-- **AC-003**: AI-generated content properly reviewed, edited, verified, and referenced
+- **AC-003**: AI-generated content properly reviewed, edited, verified, and properly referenced
 - **AC-004**: Research integrity standards met with minimum 15 sources, at least 50% peer-reviewed
+
+### Phase-III AI Chatbot & MCP Compliance
+
+- **P3-001**: All development follows Agentic Development Law: spec → plan → tasks → implementation via Qwen CLI
+- **P3-002**: No manual coding is allowed; all code must be generated via Qwen CLI
+- **P3-003**: MCP server built using Official MCP SDK with stateless tools
+- **P3-004**: FastAPI server remains stateless with database as single source of truth
+- **P3-005**: Authentication handled via Better Auth with JWT verification
+- **P3-006**: Frontend uses OpenAI ChatKit with proper domain configuration
+- **P3-007**: AI agent interprets natural language task requests and chooses correct MCP tools automatically
+- **P3-008**: All state persists in database (PostgreSQL) with no in-memory conversation state
+- **P3-009**: MCP tools are stateless and use database as single source of truth

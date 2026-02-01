@@ -3,16 +3,21 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.task_routes import router as task_router
 from src.api.auth_routes import router as auth_router
+from src.api.chat_routes import router as chat_router
 from src.db.database import create_db_and_tables
 import uvicorn
 import logging
+
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Debug: Print current DATABASE_URL
-print(f"DEBUG: DATABASE_URL is set to: {os.getenv('DATABASE_URL', 'DEFAULT (will use sqlite+aiosqlite:///./todo_app_local.db)')}")
+print(f"DEBUG: DATABASE_URL is set to: {os.getenv('DATABASE_URL', 'DEFAULT')}")
 
 app = FastAPI(title="Todo App API", version="1.0.0")
 
@@ -29,6 +34,7 @@ app.add_middleware(
 # Include routers
 app.include_router(task_router, prefix="/api", tags=["tasks"])
 app.include_router(auth_router, prefix="/api", tags=["auth"])
+app.include_router(chat_router, prefix="/api", tags=["chat"])
 
 @app.on_event("startup")
 async def startup_event():
@@ -38,7 +44,9 @@ async def startup_event():
         logger.info("Database tables created successfully")
     except Exception as e:
         logger.error(f"Failed to initialize database: {e}")
-        raise
+        # Don't raise the exception to allow the app to start even if DB setup fails
+        # This allows the app to run in cases where DB might not be immediately available
+        logger.warning("Continuing app startup despite database initialization error")
 
 @app.get("/")
 def read_root():

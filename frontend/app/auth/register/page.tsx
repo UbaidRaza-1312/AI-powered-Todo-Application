@@ -31,6 +31,7 @@ const RegisterPage = () => {
         // Automatically log in after registration
         const loginResponse = await AuthService.login({ email, password });
         if (loginResponse) {
+          // Redirect to tasks page after successful registration and login
           window.location.href = '/tasks';
         }
       }

@@ -4,6 +4,10 @@ from typing import AsyncGenerator
 import os
 import logging
 
+# Load environment variables from .env file
+from dotenv import load_dotenv
+load_dotenv()
+
 # Global variables - will be initialized when needed
 _engine = None
 _AsyncSessionLocal = None
@@ -78,9 +82,15 @@ async def create_db_and_tables():
         from ..models.task import Task  # noqa: F401
 
         engine = get_engine()
+
+        # Try to connect and create tables
         async with engine.begin() as conn:
             # Create tables
             await conn.run_sync(SQLModel.metadata.create_all)
+
+        # Commit and close the connection properly
+        await engine.dispose()
+
         logging.info("Database tables created successfully")
     except Exception as e:
         logging.error(f"Error creating database tables: {e}")

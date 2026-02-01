@@ -9,6 +9,9 @@ from ..middleware.auth_middleware import get_current_user_id
 from pydantic import BaseModel
 from uuid import UUID
 import uuid
+from sqlmodel import select
+from sqlalchemy import func
+from ..models.task import Task
 
 router = APIRouter()
 
@@ -103,4 +106,61 @@ async def get_current_user(
         first_name=user.first_name,
         last_name=user.last_name,
         created_at=user.created_at.isoformat()
+    )
+
+
+@router.post("/auth/logout")
+async def logout_user():
+    """Logout a user (currently just a confirmation endpoint)"""
+    # In a stateful session system, we would invalidate the session here
+    # For JWT tokens, the client handles removal of the token
+    # This endpoint serves as a confirmation that logout was initiated
+
+    return {"message": "Logged out successfully"}
+
+class UserProfileWithStats(BaseModel):
+    id: uuid.UUID
+    email: str
+    first_name: Optional[str]
+    last_name: Optional[str]
+    created_at: str
+    total_tasks: int
+    completed_tasks: int
+    pending_tasks: int
+
+@router.get("/auth/profile", response_model=UserProfileWithStats)
+async def get_user_profile_with_stats(
+    current_user_id: UUID = Depends(get_current_user_id),
+    session: AsyncSession = Depends(get_async_session)
+):
+    """Get current user information with task statistics"""
+    auth_service = AuthService(session)
+    user = await auth_service.get_user_by_id(current_user_id)
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    # Count user's tasks
+    total_tasks_stmt = select(Task).where(Task.user_id == current_user_id)
+    total_tasks_result = await session.execute(select(func.count(Task.id)).where(Task.user_id == current_user_id))
+    total_tasks = total_tasks_result.scalar() or 0
+
+    completed_tasks_stmt = select(func.count(Task.id)).where(Task.user_id == current_user_id, Task.completed == True)
+    completed_tasks_result = await session.execute(completed_tasks_stmt)
+    completed_tasks = completed_tasks_result.scalar() or 0
+
+    pending_tasks = total_tasks - completed_tasks
+
+    return UserProfileWithStats(
+        id=user.id,
+        email=user.email,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        created_at=user.created_at.isoformat(),
+        total_tasks=total_tasks,
+        completed_tasks=completed_tasks,
+        pending_tasks=pending_tasks
     )

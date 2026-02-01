@@ -5,11 +5,10 @@ import TaskService, { Task, TaskCreateData } from '../../services/taskService';
 import { toast } from 'react-toastify';
 
 interface TaskFormProps {
-  userId: string;
   onTaskCreated: (newTask: Task) => void;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ userId, onTaskCreated }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ onTaskCreated }) => {
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -45,7 +44,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ userId, onTaskCreated }) => {
         completed: false, // New tasks are not completed by default
       };
 
-      const newTask = await TaskService.createTask(userId, taskData);
+      const newTask = await TaskService.createTask(taskData);
       onTaskCreated(newTask);
 
       // Reset form

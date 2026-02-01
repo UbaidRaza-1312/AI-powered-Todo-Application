@@ -19,6 +19,7 @@ const LoginPage = () => {
     try {
       const response = await AuthService.login({ email, password });
       if (response) {
+        // Redirect to tasks page after successful login
         window.location.href = '/tasks';
       }
     } catch (err) {

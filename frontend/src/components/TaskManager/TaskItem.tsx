@@ -6,24 +6,22 @@ import { toast } from 'react-toastify';
 
 interface TaskItemProps {
   task: Task;
-  userId: string;
   onTaskUpdated: (updatedTask: Task) => void;
   onTaskDeleted: (taskId: string) => void;
   onToggleCompletion: (taskId: string) => void;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, userId, onTaskUpdated, onTaskDeleted, onToggleCompletion }) => {
+const TaskItem: React.FC<TaskItemProps> = ({ task, onTaskUpdated, onTaskDeleted, onToggleCompletion }) => {
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [title, setTitle] = useState<string>(task.title);
   const [description, setDescription] = useState<string>(task.description || '');
 
   const handleSave = async () => {
     try {
-      const updatedTask = await TaskService.updateTask(task.user_id, task.id, {
+      const updatedTask = await TaskService.updateTask(task.id, {
         title: title || task.title,
         description: description || task.description,
         completed: task.completed, // Preserve the completed status
-        priority: task.priority, // Send the priority value
         due_date: task.due_date, // Send the due date value
       });
       onTaskUpdated(updatedTask);
@@ -72,7 +70,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, userId, onTaskUpdated, onTask
 
   const handleDelete = async () => {
     try {
-      await TaskService.deleteTask(task.user_id, task.id);
+      await TaskService.deleteTask(task.id);
       onTaskDeleted(task.id);
       toast.success(`"${task.title}" has been deleted successfully!`, {
         position: "top-center",
@@ -112,7 +110,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, userId, onTaskUpdated, onTask
 
   const handleToggleCompletion = async () => {
     try {
-      const updatedTask = await TaskService.toggleTaskCompletion(task.user_id, task.id);
+      const updatedTask = await TaskService.toggleTaskCompletion(task.id);
       onTaskUpdated(updatedTask);
       toast.info(`"${updatedTask.title}" ${updatedTask.completed ? 'completed' : 'marked as pending'}!`, {
         position: "top-center",

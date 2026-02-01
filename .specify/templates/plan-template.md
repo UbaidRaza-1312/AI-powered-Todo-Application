@@ -40,6 +40,12 @@ Gates determined based on constitution file:
 - Zero-tolerance for plagiarism; all sources must be cited in APA style
 - AI-generated content must be reviewed, edited, verified, and properly referenced
 - All outputs require human validation, spec conformance, and security review
+- Development must follow Agentic Development Law: spec → plan → tasks → implementation via Qwen CLI
+- No manual coding is allowed; all code must be generated via Qwen CLI
+- MCP server must be built using Official MCP SDK with stateless tools
+- FastAPI server must remain stateless with database as single source of truth
+- Authentication handled via Better Auth with JWT verification
+- Frontend must use OpenAI ChatKit with proper domain configuration
 
 ## Project Structure
 
