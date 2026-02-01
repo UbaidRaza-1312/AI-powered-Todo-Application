@@ -101,8 +101,8 @@ export default function Home() {
     </div>
   );
 }
-
 /* COMPONENTS */
+
 interface FeatureProps {
   title: string;
   desc: string;
@@ -114,7 +114,7 @@ interface StatProps {
   color: string;
 }
 
-function FeatureCard({ title, desc }) {
+function FeatureCard({ title, desc }: FeatureProps) {
   return (
     <div className="bg-gray-800/60 backdrop-blur-sm border border-gray-600/50 rounded-xl p-8 shadow-xl transition-all duration-300 hover:scale-105 hover:bg-gray-700/70 hover:border-indigo-500/50">
       <h3 className="text-2xl font-bold text-white mb-3">{title}</h3>
@@ -123,7 +123,7 @@ function FeatureCard({ title, desc }) {
   );
 }
 
-function FeatureMini({ title, desc }) {
+function FeatureMini({ title, desc }: FeatureProps) {
   return (
     <div className="bg-gray-800/60 border border-gray-600/50 rounded-xl p-8 transition-all duration-300 hover:scale-105 hover:bg-gray-700/70 hover:border-indigo-500/50">
       <h3 className="text-indigo-300 font-semibold text-xl mb-3">{title}</h3>
@@ -132,7 +132,7 @@ function FeatureMini({ title, desc }) {
   );
 }
 
-function Stat({ label, value, color }) {
+function Stat({ label, value, color }: StatProps) {
   return (
     <div className="bg-gray-800/60 backdrop-blur-sm border border-gray-600/50 rounded-xl p-6 shadow-xl">
       <div className={`${color} text-4xl font-bold mb-3`}>{value}</div>
